@@ -1,6 +1,12 @@
+using api.dtos.stock;
+using api.models;
+
 namespace api.services.Stock;
 
 public interface IStockService
 {
-    Task<List<models.Stock>> GetAllStocks();
+    Task<ServiceResponse<List<StockDto>>> GetAllStocks();
+    Task<ServiceResponse<StockDto>> GetStock(int id);
+    
+    Task<ServiceResponse<StockDto>> AddStock(CreateStockRequestDto stockRequest);
 }
