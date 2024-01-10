@@ -3,7 +3,6 @@ using api.data;
 using api.dtos.stock;
 using api.mappers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace api.services.Stock;
 
@@ -75,17 +74,52 @@ public class StockService: IStockService
         return response;
     }
 
+    public async Task<ServiceResponse<models.Stock>> UpdateStock(int id, UpdateStockRequestDto stockRequestDto)
+    {
+        var response = new ServiceResponse<models.Stock>();
+
+        try
+        {
+            var matchedStock = await _applicationDbContext.Stocks.FindAsync(id);
+
+            if (matchedStock is null)
+            {
+                throw new Exception("There was no stock matched with the provided id");
+            }
+
+            matchedStock.CompanyName = stockRequestDto.CompanyName;
+            matchedStock.MarketCap = stockRequestDto.MarketCap;
+            matchedStock.Industry = stockRequestDto.Industry;
+            matchedStock.LastDiv = stockRequestDto.LastDiv;
+            matchedStock.Purchase = stockRequestDto.Purchase;
+            matchedStock.Symbol = stockRequestDto.Symbol;
+
+            await _applicationDbContext.SaveChangesAsync();
+            
+            response.Data = matchedStock;
+            response.Message = "success";
+            response.IsSuccess = true;
+        }
+        catch (Exception e)
+        {
+            response.Message = e.Message;
+            response.IsSuccess = false;
+        }
+
+        return response;
+    }
+
     public async Task<ServiceResponse<StockDto>> AddStock(CreateStockRequestDto stockRequest)
     {
         var response = new ServiceResponse<StockDto>();
         var stockModel = stockRequest.ToStockFromCreateDto();
         try
         {
-             _applicationDbContext.Stocks.Add(stockModel);
+             await _applicationDbContext.Stocks.AddAsync(stockModel);
              await _applicationDbContext.SaveChangesAsync();
              var matchResponse = await this.GetStock(stockModel.Id);
 
-             if (matchResponse is null || matchResponse.Data is null)
+             if (matchResponse?.Data is null)
              {
                  throw new Exception("matchResponse error");
              }

@@ -30,6 +30,12 @@ public class StockController: ControllerBase
         return stockResponse.IsSuccess ? Ok(stockResponse) : NotFound(stockResponse);
     }
     
+    [HttpPut("{id}")]
+    public async Task<ActionResult<ServiceResponse<Stock>>> UpdateStock([FromRoute] int id, [FromBody] UpdateStockRequestDto stockRequestDto)
+    {
+        var stockResponse = await _stockService.UpdateStock(id, stockRequestDto);
+        return stockResponse.IsSuccess ? Ok(stockResponse) : NotFound(stockResponse);
+    }
     
     [HttpPost("add")]
     public async Task<ActionResult<ServiceResponse<StockDto>>> AddStock([FromBody] CreateStockRequestDto stockRequest)
