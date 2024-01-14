@@ -1,4 +1,5 @@
 using api.data;
+using api.services.comment;
 using api.services.Stock;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,7 +19,18 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<IStockService, StockService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 
+
+// newtonsoft
+builder.Services
+    .AddControllers()
+    .AddNewtonsoftJson(options =>
+        {
+            options.SerializerSettings.ReferenceLoopHandling =
+                Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+        }
+    );
 
 var app = builder.Build();
 

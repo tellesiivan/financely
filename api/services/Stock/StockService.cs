@@ -22,6 +22,7 @@ public class StockService: IStockService
         try
         {
             var stockList = await _applicationDbContext.Stocks
+                .Include(s => s.Comments)
                 .ToListAsync();
             
             var mappedStockList = stockList.Select(stock => stock.ToStockDto())
@@ -54,7 +55,9 @@ public class StockService: IStockService
         {
             // .Find(Finds an entity with the given primary key values)
             var matchedStock =
-                await _applicationDbContext.Stocks.FindAsync(id);
+                await _applicationDbContext.Stocks
+                    .Include(s => s.Comments)
+                    .FirstOrDefaultAsync(s => s.Id == id);
 
             if (matchedStock is null)
             {
