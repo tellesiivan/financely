@@ -7,5 +7,6 @@ public interface ICommentService
 {
     Task<ServiceResponse<List<CommentDto>>> GetAll();
     Task<ServiceResponse<CommentDto>> GetById(int id);
+    Task<ServiceResponse<CommentDto>> CreateComment(int stockId, CreateCommentDto comment);
     
 }

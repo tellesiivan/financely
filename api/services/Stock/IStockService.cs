@@ -12,6 +12,7 @@ public interface IStockService
 
     
     Task<ServiceResponse<StockDto>> AddStock(CreateStockRequestDto stockRequest);
-    
-    
+
+    Task<bool> DoesExists(int id);
+
 }

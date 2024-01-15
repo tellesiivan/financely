@@ -29,4 +29,11 @@ public class CommentController: ControllerBase
         var response = await _commentService.GetById(id);
         return response.IsSuccess ? Ok(response) : NotFound(response);
     }
+    
+    [HttpPost("create/{stockId}")]
+    public async Task<ActionResult<ServiceResponse<CommentDto>>> Create(int stockId, [FromBody] CreateCommentDto comment)
+    {
+        var response = await _commentService.CreateComment(stockId, comment);
+        return response.IsSuccess ? Ok(response) : NotFound(response);
+    }
 }

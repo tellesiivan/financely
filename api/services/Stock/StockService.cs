@@ -137,4 +137,9 @@ public class StockService: IStockService
         }
         return response;
     }
+
+    public async Task<bool> DoesExists(int id)
+    {
+        return await _applicationDbContext.Stocks.AnyAsync(stock => stock.Id == id);
+    }
 }

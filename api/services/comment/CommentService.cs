@@ -62,4 +62,36 @@ public class CommentService: ICommentService
         }
         return response;
     }
+
+    public async Task<ServiceResponse<CommentDto>> CreateComment(int stockId, CreateCommentDto comment)
+    {
+        var response = new ServiceResponse<CommentDto>();
+        var doesStockExists = await _applicationDbContext.Stocks
+            .AnyAsync(stock => stock.Id == stockId);
+        
+        try
+        {
+            if (!doesStockExists)
+            {
+                throw new Exception("Stock does not exists");
+            }
+
+            var commentModel = comment.ToComment(stockId);
+            
+            await _applicationDbContext.Comments.AddAsync(commentModel);
+            await _applicationDbContext.SaveChangesAsync();
+            
+            response.Data = commentModel.Dto();
+            response.IsSuccess = true;
+            response.Message = "Comment was successfully added";
+
+        }
+        catch (Exception e)
+        {
+            response.IsSuccess = false;
+            response.Message = e.Message;
+        }
+
+        return response;
+    }
 }
