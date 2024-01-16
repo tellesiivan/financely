@@ -1,5 +1,6 @@
 using api.data;
 using api.dtos.comment;
+using api.extensions;
 using api.mappers;
 using api.models;
 using Microsoft.EntityFrameworkCore;
@@ -63,6 +64,34 @@ public class CommentService: ICommentService
         return response;
     }
 
+    public async Task<ServiceResponse<string>> Delete(int id)
+    {
+        var response = new ServiceResponse<string>();
+        var matchedComment = await _applicationDbContext.Comments
+            .FindAsync(id);
+
+        try
+        {
+            if (matchedComment is null)
+            {
+                throw new Exception("There is no comment with the provided id");
+            }
+
+            _applicationDbContext.Comments.Remove(matchedComment);
+            await _applicationDbContext.SaveChangesAsync();
+            
+            response.IsSuccess = true;
+            response.Message = "Successfully deleted";
+        }
+        catch (Exception e)
+        {
+            response.IsSuccess = false;
+            response.Message = e.Message;
+        }
+
+        return response;
+    }
+
     public async Task<ServiceResponse<CommentDto>> CreateComment(int stockId, CreateCommentDto comment)
     {
         var response = new ServiceResponse<CommentDto>();
@@ -85,6 +114,36 @@ public class CommentService: ICommentService
             response.IsSuccess = true;
             response.Message = "Comment was successfully added";
 
+        }
+        catch (Exception e)
+        {
+            response.IsSuccess = false;
+            response.Message = e.Message;
+        }
+
+        return response;
+    }
+
+    public async Task<ServiceResponse<CommentDto>> UpdateComment(int commentId, UpdateCommentDto comment)
+    {
+        var response = new ServiceResponse<CommentDto>();
+        var matchedComment = await _applicationDbContext.Comments.FindAsync(commentId);
+        
+        try
+        {
+            if (matchedComment.IsNull())
+            {
+                throw new Exception("No comment matched with the provided id");
+            }
+
+            matchedComment!.Content = comment.Content;
+            matchedComment.Title = comment.Title;
+
+           await _applicationDbContext.SaveChangesAsync();
+
+            response.Data = matchedComment.Dto();
+            response.IsSuccess = true;
+            response.Message = "Successfully updated comment";
         }
         catch (Exception e)
         {

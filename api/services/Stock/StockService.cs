@@ -1,8 +1,10 @@
 using api.models;
 using api.data;
 using api.dtos.stock;
+using api.helpers;
 using api.mappers;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace api.services.Stock;
 
@@ -15,15 +17,30 @@ public class StockService: IStockService
         _applicationDbContext = applicationDbContext;
     }
 
-    public async Task<ServiceResponse<List<StockDto>>> GetAllStocks()
+    public async Task<ServiceResponse<List<StockDto>>> GetAllStocks(QueryObject queryObject)
     {
         var response = new ServiceResponse<List<StockDto>>();
 
         try
         {
-            var stockList = await _applicationDbContext.Stocks
+            // AsQueryable: This is a convenience method to help with disambiguation of extension methods in the same namespace that extend both interfaces. 
+            // Pretty much allows you to make additional queries before making the results into a list
+            var queryableStocks = _applicationDbContext.Stocks
                 .Include(s => s.Comments)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrEmpty(queryObject.CompanyName))
+            {
+                queryableStocks = queryableStocks.Where(stock =>
+                    stock.CompanyName.Contains(queryObject.CompanyName));
+                
+            } else if (!string.IsNullOrEmpty(queryObject.Symbol))
+            {
+                queryableStocks = queryableStocks.Where(stock =>
+                    stock.CompanyName.Contains(queryObject.Symbol));
+            }
+
+            var stockList = await queryableStocks.ToListAsync();
             
             var mappedStockList = stockList.Select(stock => stock.ToStockDto())
                 .ToList();
