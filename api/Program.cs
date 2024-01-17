@@ -1,7 +1,11 @@
 using api.data;
+using api.models;
 using api.services.comment;
 using api.services.Stock;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,6 +35,45 @@ builder.Services
                 Newtonsoft.Json.ReferenceLoopHandling.Ignore;
         }
     );
+
+// Adds and configures the identity system for the specified User and Role types.
+builder.Services
+    .AddIdentity<AppUser, IdentityRole>(options =>
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 8;
+    })
+    // Adds an Entity Framework implementation of identity information stores.
+    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+// jwt scheme
+builder.Services.AddAuthentication(options =>
+{
+    // set JwtBearerDefaults.AuthenticationScheme for all schemes
+    options.DefaultAuthenticateScheme =
+        options.DefaultChallengeScheme =
+            options.DefaultForbidScheme =
+                options.DefaultScheme =
+                    options.DefaultSignInScheme =
+                        options.DefaultSignOutScheme = JwtBearerDefaults.AuthenticationScheme;
+    // jwt options
+}).AddJwtBearer(options =>
+{
+    SymmetricSecurityKey signingKey = new(System.Text.Encoding.UTF8.GetBytes(builder.Configuration["JWT:SigningKey"]!));
+    
+    options.TokenValidationParameters = new TokenValidationParameters()
+    {
+        ValidateIssuer = true,
+        ValidIssuer = builder.Configuration["JWT:Issuer"],
+        ValidateAudience = true,
+        ValidAudience = builder.Configuration["JWT:Audience"],
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = signingKey
+    };
+});
 
 var app = builder.Build();
 

@@ -4,7 +4,6 @@ using api.dtos.stock;
 using api.helpers;
 using api.mappers;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace api.services.Stock;
 
@@ -38,9 +37,25 @@ public class StockService: IStockService
             {
                 queryableStocks = queryableStocks.Where(stock =>
                     stock.CompanyName.Contains(queryObject.Symbol));
+            } else if (!string.IsNullOrEmpty(queryObject.SortBy))
+            {
+                // OrdinalIgnoreCase: Compare strings using ordinal (binary) sort rules and ignoring the case of the strings being compared.
+                if (queryObject.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))
+                {
+                    queryableStocks = queryObject.IsDescending
+                        ? queryableStocks.OrderByDescending(stock => stock.Symbol)
+                            // OrderBy: Sorts the elements of a sequence in ascending order according to a key.
+                        : queryableStocks.OrderBy(stock => stock.Symbol);
+                }
             }
 
-            var stockList = await queryableStocks.ToListAsync();
+            // example: queryObject.PageNumber = 4,
+            // queryObject.PageSize = 50
+            // 4 - 1(starts at 0 so subtract 1, -1 -> prevents the PageNumber to be one ahead) = 3
+            // 3 * 50 = 150, we skip the first 150 items and take(get) the next 50(PageSize) items
+            var skipNumber = (queryObject.PageNumber - 1) * queryObject.PageSize;
+                // skip the first X number of items and Take(get) Y number of items
+            var stockList = await queryableStocks.Skip(skipNumber).Take(queryObject.PageSize).ToListAsync();
             
             var mappedStockList = stockList.Select(stock => stock.ToStockDto())
                 .ToList();

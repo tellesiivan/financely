@@ -1,9 +1,10 @@
 using api.models;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.data;
 
-public class ApplicationDbContext: DbContext
+public class ApplicationDbContext: IdentityDbContext<AppUser>
 {
     
     // primary constructor example: public class ApplicationDbContext(DbContextOptions dbContextOptions) : DbContext(dbContextOptions)
