@@ -2,6 +2,7 @@ using api.dtos.stock;
 using api.helpers;
 using api.services.Stock;
 using api.models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace api.controllers;
@@ -32,6 +33,7 @@ public class StockController: ControllerBase
     }
     
     [HttpPut("{id:int}")]
+    [Authorize]
     public async Task<ActionResult<ServiceResponse<Stock>>> UpdateStock([FromRoute] int id, [FromBody] UpdateStockRequestDto stockRequestDto)
     {
         // validation: Data annotation(normally should be used when getting info via form,body etc
