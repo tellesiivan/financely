@@ -174,4 +174,9 @@ public class StockService: IStockService
     {
         return await _applicationDbContext.Stocks.AnyAsync(stock => stock.Id == id);
     }
+
+    public async Task<models.Stock?> GetStockBySymbol(StockSymbolDto stockSymbolDto)
+    {
+        return await _applicationDbContext.Stocks.FirstOrDefaultAsync(stock => stock.Symbol.ToLower() == stockSymbolDto.Symbol.ToLower());
+    }
 }

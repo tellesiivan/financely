@@ -8,15 +8,29 @@ namespace api.controllers;
 
 [Route("[controller]")]
 [ApiController]
-public class PortfolioController(IPortfolio portfolio): ControllerBase
+public class PortfolioController(IPortfolioService portfolioService): ControllerBase
 {
-    private readonly IPortfolio _portfolio = portfolio;
+    private readonly IPortfolioService _portfolioService = portfolioService;
 
     [HttpGet("all")]
     [Authorize]
     public async Task<ActionResult<ServiceResponse<StockDto>>> GetUserPortfolio()
     {
-        var res = await _portfolio.GetUserPortfolio(User);
+        var res = await _portfolioService.GetUserPortfolio(User);
         return res.IsSuccess ? Ok(res) : BadRequest(res);
     }
+
+    [HttpPost("create")]
+    [Authorize]
+    public async Task<ActionResult<ServiceResponse<Portfolio>>> CreatePortfolio([FromBody] StockSymbolDto symbolDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var response = await _portfolioService.CreatePortfolio(User, symbolDto);
+        return response.IsSuccess ? Ok(response) : BadRequest(response);
+    }
+    
 }
