@@ -26,6 +26,7 @@ public class StockService: IStockService
             // Pretty much allows you to make additional queries before making the results into a list
             var queryableStocks = _applicationDbContext.Stocks
                 .Include(s => s.Comments)
+                .ThenInclude(stock => stock.AppUser)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(queryObject.CompanyName))
@@ -75,7 +76,6 @@ public class StockService: IStockService
             response.IsSuccess = false;
         }
 
-
         return response;
     }
 
@@ -89,6 +89,7 @@ public class StockService: IStockService
             var matchedStock =
                 await _applicationDbContext.Stocks
                     .Include(s => s.Comments)
+                    .ThenInclude(stock => stock.AppUser)
                     .FirstOrDefaultAsync(s => s.Id == id);
 
             if (matchedStock is null)

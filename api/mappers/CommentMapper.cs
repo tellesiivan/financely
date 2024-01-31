@@ -13,7 +13,8 @@ public static class CommentMapper
             Content = comment.Content,
             Id = comment.Id,
             Title = comment.Title,
-            CreatedOn = comment.CreatedOn
+            CreatedOn = comment.CreatedOn,
+            CreatedBy = comment.AppUser.UserName
         };
     }
     public static Comment ToComment(this CreateCommentDto comment, int stockId)

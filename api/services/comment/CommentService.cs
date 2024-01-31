@@ -1,26 +1,25 @@
+using System.Security.Claims;
 using api.data;
 using api.dtos.comment;
 using api.extensions;
 using api.mappers;
 using api.models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.services.comment;
 
-public class CommentService: ICommentService
+public class CommentService(ApplicationDbContext applicationDbContext, UserManager<AppUser> userManager) : ICommentService
 {
-    private readonly ApplicationDbContext _applicationDbContext;
-
-    public CommentService(ApplicationDbContext applicationDbContext)
-    {
-        this._applicationDbContext = applicationDbContext;
-    }
     public async Task<ServiceResponse<List<CommentDto>>> GetAll()
     {
         var response = new ServiceResponse<List<CommentDto>>();
         try
         {
-            var comments = await _applicationDbContext.Comments.ToListAsync();
+            var comments = await applicationDbContext.Comments
+                .Include(comment => comment.AppUser)
+                .ToListAsync();
+            
             var commentDtoList = comments.Select(comment => comment.Dto()).ToList();
 
             if (commentDtoList is null)
@@ -46,7 +45,9 @@ public class CommentService: ICommentService
         var response = new ServiceResponse<CommentDto>();
         try
         {
-            var matchedComment = await _applicationDbContext.Comments.FindAsync(id);
+            var matchedComment = await applicationDbContext.Comments
+                .Include(comment => comment.AppUser)
+                .FirstOrDefaultAsync(comment => comment.Id == id);
             
             if (matchedComment is null)
             {
@@ -67,7 +68,7 @@ public class CommentService: ICommentService
     public async Task<ServiceResponse<string>> Delete(int id)
     {
         var response = new ServiceResponse<string>();
-        var matchedComment = await _applicationDbContext.Comments
+        var matchedComment = await applicationDbContext.Comments
             .FindAsync(id);
 
         try
@@ -77,8 +78,8 @@ public class CommentService: ICommentService
                 throw new Exception("There is no comment with the provided id");
             }
 
-            _applicationDbContext.Comments.Remove(matchedComment);
-            await _applicationDbContext.SaveChangesAsync();
+            applicationDbContext.Comments.Remove(matchedComment);
+            await applicationDbContext.SaveChangesAsync();
             
             response.IsSuccess = true;
             response.Message = "Successfully deleted";
@@ -92,10 +93,13 @@ public class CommentService: ICommentService
         return response;
     }
 
-    public async Task<ServiceResponse<CommentDto>> CreateComment(int stockId, CreateCommentDto comment)
+    public async Task<ServiceResponse<CommentDto>> CreateComment(int stockId, CreateCommentDto comment, ClaimsPrincipal user)
     {
         var response = new ServiceResponse<CommentDto>();
-        var doesStockExists = await _applicationDbContext.Stocks
+        var username = user.GetUsername();
+        var appUser = await userManager.FindByNameAsync(username);
+        
+        var doesStockExists = await applicationDbContext.Stocks
             .AnyAsync(stock => stock.Id == stockId);
         
         try
@@ -105,10 +109,16 @@ public class CommentService: ICommentService
                 throw new Exception("Stock does not exists");
             }
 
+            if (appUser is null)
+            {
+                throw new Exception("User does not exists");
+            }
+
             var commentModel = comment.ToComment(stockId);
+            commentModel.AppUserId = appUser.Id;
             
-            await _applicationDbContext.Comments.AddAsync(commentModel);
-            await _applicationDbContext.SaveChangesAsync();
+            await applicationDbContext.Comments.AddAsync(commentModel);
+            await applicationDbContext.SaveChangesAsync();
             
             response.Data = commentModel.Dto();
             response.IsSuccess = true;
@@ -127,7 +137,7 @@ public class CommentService: ICommentService
     public async Task<ServiceResponse<CommentDto>> UpdateComment(int commentId, UpdateCommentDto comment)
     {
         var response = new ServiceResponse<CommentDto>();
-        var matchedComment = await _applicationDbContext.Comments.FindAsync(commentId);
+        var matchedComment = await applicationDbContext.Comments.FindAsync(commentId);
         
         try
         {
@@ -139,7 +149,7 @@ public class CommentService: ICommentService
             matchedComment!.Content = comment.Content;
             matchedComment.Title = comment.Title;
 
-           await _applicationDbContext.SaveChangesAsync();
+           await applicationDbContext.SaveChangesAsync();
 
             response.Data = matchedComment.Dto();
             response.IsSuccess = true;
