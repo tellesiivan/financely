@@ -33,4 +33,17 @@ public class PortfolioController(IPortfolioService portfolioService): Controller
         return response.IsSuccess ? Ok(response) : BadRequest(response);
     }
     
+    [HttpDelete("delete")]
+    [Authorize]
+    public async Task<ActionResult<ServiceResponse<string>>> DeletePortfolio([FromBody] StockSymbolDto symbolDto)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        var response = await _portfolioService.DeletePortfolio(User, symbolDto);
+        return response.IsSuccess ? Ok(response) : BadRequest(response);
+    }
+    
 }

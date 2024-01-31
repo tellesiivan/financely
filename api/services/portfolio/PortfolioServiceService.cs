@@ -6,6 +6,7 @@ using api.models;
 using api.services.Stock;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace api.services.portfolio;
 
@@ -101,4 +102,54 @@ public class PortfolioServiceService(UserManager<AppUser> userManager, Applicati
 
         return response;
     }
+
+    public async Task<ServiceResponse<string>> DeletePortfolio(ClaimsPrincipal user, StockSymbolDto symbolDto)
+    {
+        var response = new ServiceResponse<string>();
+        
+        var username = user.GetUsername();
+        var appUser = await _userManager.FindByNameAsync(username);
+        
+
+        try
+        {
+            var userPortfolioResponse = await this.GetUserPortfolio(user);
+            var userStock = userPortfolioResponse.Data;
+            
+            var filteredStock = userStock?.FirstOrDefault(stock =>
+                stock.Symbol.ToLower() == symbolDto.Symbol.ToLower()
+            );
+            
+            if (filteredStock is null)
+            {
+                throw new Exception("No matched stock with the provided symbol");
+            }
+
+            var userPortfolio = await _applicationDbContext.Portfolios.FirstOrDefaultAsync(portfolio =>
+                portfolio.AppUserId == appUser.Id &&
+                portfolio.StockId == filteredStock.Id);
+
+
+            if (userPortfolio is null)
+            {
+                throw new Exception("No matched portfolio");
+
+            }
+
+            _applicationDbContext.Portfolios.Remove(userPortfolio);
+           await _applicationDbContext.SaveChangesAsync();
+
+           response.IsSuccess = true;
+           response.Message = "Success";
+        }
+        catch (Exception e)
+        {
+            response.IsSuccess = false;
+            response.Message = e.Message;
+        }
+
+        return response;
+    }
+
+
 }

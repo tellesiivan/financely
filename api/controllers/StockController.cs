@@ -25,14 +25,14 @@ public class StockController: ControllerBase
         return response.IsSuccess ? Ok(response) : NotFound(response);
     }
     
-    [HttpGet("{id:int}")]
+    [HttpGet("getById/{id:int}")]
     public async Task<ActionResult<ServiceResponse<StockDto>>> GetStockById([FromRoute] int id)
     {
         var stockResponse = await _stockService.GetStock(id);
         return stockResponse.IsSuccess ? Ok(stockResponse) : NotFound(stockResponse);
     }
     
-    [HttpPut("{id:int}")]
+    [HttpPut("update/{id:int}")]
     [Authorize]
     public async Task<ActionResult<ServiceResponse<Stock>>> UpdateStock([FromRoute] int id, [FromBody] UpdateStockRequestDto stockRequestDto)
     {
