@@ -1,15 +1,18 @@
 using System.Security.Claims;
 using api.data;
 using api.dtos.comment;
+using api.dtos.stock;
 using api.extensions;
 using api.mappers;
 using api.models;
+using api.services.FMS;
+using api.services.Stock;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace api.services.comment;
 
-public class CommentService(ApplicationDbContext applicationDbContext, UserManager<AppUser> userManager) : ICommentService
+public class CommentService(ApplicationDbContext applicationDbContext, UserManager<AppUser> userManager, IStockService stockService, IFMPService _fmpService) : ICommentService
 {
     public async Task<ServiceResponse<List<CommentDto>>> GetAll()
     {
@@ -93,27 +96,38 @@ public class CommentService(ApplicationDbContext applicationDbContext, UserManag
         return response;
     }
 
-    public async Task<ServiceResponse<CommentDto>> CreateComment(int stockId, CreateCommentDto comment, ClaimsPrincipal user)
+    public async Task<ServiceResponse<CommentDto>> CreateComment(string symbol, CreateCommentDto comment, ClaimsPrincipal user)
     {
         var response = new ServiceResponse<CommentDto>();
         var username = user.GetUsername();
         var appUser = await userManager.FindByNameAsync(username);
-        
-        var doesStockExists = await applicationDbContext.Stocks
-            .AnyAsync(stock => stock.Id == stockId);
+        StockSymbolDto stockSymbolDto = new()
+        {
+            Symbol = symbol
+        };
         
         try
         {
-            if (!doesStockExists)
-            {
-                throw new Exception("Stock does not exists");
-            }
-
+                   
             if (appUser is null)
             {
                 throw new Exception("User does not exists");
             }
+            
+            var stockBySymbol = await stockService.GetStockBySymbol(stockSymbolDto);
 
+            if (stockBySymbol is null)
+            {
+                stockBySymbol = await _fmpService.FindStockBySymbolAsync(stockSymbolDto);
+                if (stockBySymbol is null) throw new Exception("The is no results matched for the provided stock symbol");
+                // save the stock to our db
+                await stockService.AddStock(stockBySymbol.ToCreateDto());
+            }
+
+            var stockId = stockBySymbol.Id;
+            // save the stock to our db
+            await stockService.AddStock(stockBySymbol.ToCreateDto());
+            
             var commentModel = comment.ToComment(stockId);
             commentModel.AppUserId = appUser.Id;
             

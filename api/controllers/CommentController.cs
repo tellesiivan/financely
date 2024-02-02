@@ -38,16 +38,16 @@ public class CommentController(ICommentService commentService) : ControllerBase
         return response.IsSuccess ? Ok(response) : NotFound(response);
     }
     
-    [HttpPost("create/{stockId:int}")]
-    public async Task<ActionResult<ServiceResponse<CommentDto>>> Create(int stockId, [FromBody] CreateCommentDto comment)
+    [HttpPost("create/{symbol:alpha}")]
+    public async Task<ActionResult<ServiceResponse<CommentDto>>> Create(string symbol, [FromBody] CreateCommentDto comment)
     {
         // validation: Data annotation(normally should be used when getting info via form,body etc
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
-
-        var response = await commentService.CreateComment(stockId, comment, User);
+   
+        var response = await commentService.CreateComment(symbol, comment, User);
         return response.IsSuccess ? Ok(response) : NotFound(response);
     }
     

@@ -5,6 +5,7 @@ namespace api.mappers;
 
 public static class CommentMapper
 {
+    
     public static CommentDto Dto(this Comment comment)
     {
         return new CommentDto()

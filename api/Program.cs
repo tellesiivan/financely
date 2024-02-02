@@ -2,6 +2,7 @@ using api.data;
 using api.models;
 using api.services.auth;
 using api.services.comment;
+using api.services.FMS;
 using api.services.portfolio;
 using api.services.Stock;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -28,8 +29,10 @@ builder.Services.AddControllers();
 builder.Services.AddScoped<IStockService, StockService>();
 builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IPortfolioService, PortfolioServiceService>();
+builder.Services.AddScoped<IPortfolioService, PortfolioService>();
+builder.Services.AddScoped<IFMPService, FmpService>();
 
+builder.Services.AddHttpClient<IFMPService, FmpService>();
 
 // newtonsoft
 builder.Services

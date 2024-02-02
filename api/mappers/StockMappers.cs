@@ -8,7 +8,7 @@ public static class StockMappers
    // extension method
    public static StockDto ToStockDto(this Stock stockModel)
    {
-      return new StockDto()
+      return new StockDto
       {
          Id = stockModel.Id,
          Symbol = stockModel.Symbol,
@@ -23,7 +23,7 @@ public static class StockMappers
 
    public static Stock ToStockFromCreateDto(this CreateStockRequestDto stockRequestDto)
    {
-      return new Stock()
+      return new Stock
       {
          Symbol = stockRequestDto.Symbol,
          CompanyName = stockRequestDto.CompanyName,
@@ -31,6 +31,32 @@ public static class StockMappers
          Industry = stockRequestDto.Industry,
          Purchase = stockRequestDto.Purchase,
          LastDiv = stockRequestDto.LastDiv,
+      };
+   }  
+   
+   public static CreateStockRequestDto ToCreateDto(this Stock stock)
+   {
+      return new CreateStockRequestDto
+      {
+         Symbol = stock.Symbol,
+         CompanyName = stock.CompanyName,
+         Purchase = stock.Purchase,
+         Industry = stock.Industry,
+         LastDiv = stock.LastDiv,
+         MarketCap = stock.MarketCap
+      };
+   }
+   
+   public static Stock FmpToStock(this FMPStock fmpStock)
+   {
+      return new Stock
+      {
+         Symbol = fmpStock.Symbol,
+         Purchase = (decimal)fmpStock.Price,
+         LastDiv = (decimal)fmpStock.LastDiv,
+         CompanyName = fmpStock.CompanyName,
+         Industry = fmpStock.Industry,
+         MarketCap = fmpStock.MktCap
       };
    }
 }

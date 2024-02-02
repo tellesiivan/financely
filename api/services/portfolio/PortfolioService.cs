@@ -2,7 +2,9 @@ using System.Security.Claims;
 using api.data;
 using api.dtos.stock;
 using api.extensions;
+using api.mappers;
 using api.models;
+using api.services.FMS;
 using api.services.Stock;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -10,23 +12,19 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace api.services.portfolio;
 
-public class PortfolioServiceService(UserManager<AppUser> userManager, ApplicationDbContext applicationDbContext, IStockService stockService):IPortfolioService
+public class PortfolioService(UserManager<AppUser> userManager, ApplicationDbContext applicationDbContext, IStockService stockService, IFMPService fmpService):IPortfolioService
 {
-    private readonly UserManager<AppUser> _userManager = userManager;
-    private readonly ApplicationDbContext _applicationDbContext = applicationDbContext;
-    private readonly IStockService _stockService = stockService;
-
     public async  Task<ServiceResponse<List<models.Stock>>> GetUserPortfolio(ClaimsPrincipal user)
     {
         var response = new ServiceResponse<List<models.Stock>>();
         var userName = user.GetUsername();
         try
         {
-            var appUser = await _userManager.FindByNameAsync(userName);
+            var appUser = await userManager.FindByNameAsync(userName);
             if (appUser is null) throw new Exception("No username found");
 
             var userPortfolioList =
-                await _applicationDbContext.Portfolios
+                await applicationDbContext.Portfolios
                     .Where(p => p.AppUserId == appUser.Id)
                     .Select(portfolio =>new models.Stock()
                     {
@@ -59,16 +57,20 @@ public class PortfolioServiceService(UserManager<AppUser> userManager, Applicati
         
         try
         {
-            var userMatched = await _userManager.FindByNameAsync(userName);
+            var userMatched = await userManager.FindByNameAsync(userName);
             if (userMatched is null)
             {
                 throw new Exception("Unable to fulfill request at this moment");
             }
-            
-            var stockMatched = await _stockService.GetStockBySymbol(symbolDto);
+
+            var stockMatched = await stockService.GetStockBySymbol(symbolDto);
+
             if (stockMatched is null)
             {
-                throw new Exception("Stock symbol provided does not match");
+                stockMatched = await fmpService.FindStockBySymbolAsync(symbolDto);
+                if (stockMatched is null) throw new Exception("The is no results matched for the provided stock symbol");
+                // save the stock to our db
+                await stockService.AddStock(stockMatched.ToCreateDto());
             }
 
             var currentPortfolioResponse = await this.GetUserPortfolio(user);
@@ -81,14 +83,15 @@ public class PortfolioServiceService(UserManager<AppUser> userManager, Applicati
                 throw new Exception("Stock symbol has already been added");
             }
 
+            var stockId = stockMatched.Id;
             Portfolio portfolio = new()
             {
                 AppUserId = userMatched.Id,
-                StockId = stockMatched.Id
+                StockId = stockId
             };
 
-           await _applicationDbContext.Portfolios.AddAsync(portfolio);
-           await _applicationDbContext.SaveChangesAsync();
+           await applicationDbContext.Portfolios.AddAsync(portfolio);
+           await applicationDbContext.SaveChangesAsync();
            
            response.IsSuccess = true;
            response.Message = "Successfully created ";
@@ -108,7 +111,7 @@ public class PortfolioServiceService(UserManager<AppUser> userManager, Applicati
         var response = new ServiceResponse<string>();
         
         var username = user.GetUsername();
-        var appUser = await _userManager.FindByNameAsync(username);
+        var appUser = await userManager.FindByNameAsync(username);
         
 
         try
@@ -125,7 +128,7 @@ public class PortfolioServiceService(UserManager<AppUser> userManager, Applicati
                 throw new Exception("No matched stock with the provided symbol");
             }
 
-            var userPortfolio = await _applicationDbContext.Portfolios.FirstOrDefaultAsync(portfolio =>
+            var userPortfolio = await applicationDbContext.Portfolios.FirstOrDefaultAsync(portfolio =>
                 portfolio.AppUserId == appUser.Id &&
                 portfolio.StockId == filteredStock.Id);
 
@@ -136,8 +139,8 @@ public class PortfolioServiceService(UserManager<AppUser> userManager, Applicati
 
             }
 
-            _applicationDbContext.Portfolios.Remove(userPortfolio);
-           await _applicationDbContext.SaveChangesAsync();
+            applicationDbContext.Portfolios.Remove(userPortfolio);
+           await applicationDbContext.SaveChangesAsync();
 
            response.IsSuccess = true;
            response.Message = "Success";
