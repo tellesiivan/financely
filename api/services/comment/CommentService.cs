@@ -14,16 +14,27 @@ namespace api.services.comment;
 
 public class CommentService(ApplicationDbContext applicationDbContext, UserManager<AppUser> userManager, IStockService stockService, IFMPService _fmpService) : ICommentService
 {
-    public async Task<ServiceResponse<List<CommentDto>>> GetAll()
+    public async Task<ServiceResponse<List<CommentDto>>> GetAll(CommentQuery commentQuery)
     {
         var response = new ServiceResponse<List<CommentDto>>();
         try
         {
-            var comments = await applicationDbContext.Comments
+            var commentsQuery =  applicationDbContext.Comments
                 .Include(comment => comment.AppUser)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(commentQuery.Symbol))
+            {
+                commentsQuery =
+                    commentsQuery.Where(comment => (comment.Stock != null ? comment.Stock.Symbol.ToLower() : null) == commentQuery.Symbol.ToLower());
+            }
+            if (commentQuery.IsDescending)
+            {
+                commentsQuery = commentsQuery.OrderByDescending(comment => comment.CreatedOn);
+            }
+
             
-            var commentDtoList = comments.Select(comment => comment.Dto()).ToList();
+            var commentDtoList = commentsQuery.Select(comment => comment.Dto()).ToList();
 
             if (commentDtoList is null)
             {

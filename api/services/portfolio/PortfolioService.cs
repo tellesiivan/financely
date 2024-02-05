@@ -62,7 +62,16 @@ public class PortfolioService(UserManager<AppUser> userManager, ApplicationDbCon
             {
                 throw new Exception("Unable to fulfill request at this moment");
             }
+            
+            var currentPortfolioResponse = await this.GetUserPortfolio(user);
+            var portfolioList = currentPortfolioResponse.Data;
+            var isExisting = portfolioList?.Any(portfolio => string.Equals(portfolio.Symbol, symbolDto.Symbol, StringComparison.CurrentCultureIgnoreCase));
 
+            if (isExisting == true)
+            {
+                throw new Exception("Stock symbol has already been added");
+            }
+            
             var stockMatched = await stockService.GetStockBySymbol(symbolDto);
 
             if (stockMatched is null)
@@ -72,16 +81,7 @@ public class PortfolioService(UserManager<AppUser> userManager, ApplicationDbCon
                 // save the stock to our db
                 await stockService.AddStock(stockMatched.ToCreateDto());
             }
-
-            var currentPortfolioResponse = await this.GetUserPortfolio(user);
-            var portfolioList = currentPortfolioResponse.Data;
-
-            var isExisting = portfolioList?.Any(portfolio => string.Equals(portfolio.Symbol, symbolDto.Symbol, StringComparison.CurrentCultureIgnoreCase));
-
-            if (isExisting == true)
-            {
-                throw new Exception("Stock symbol has already been added");
-            }
+            
 
             var stockId = stockMatched.Id;
             Portfolio portfolio = new()

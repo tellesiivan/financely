@@ -6,7 +6,7 @@ namespace api.services.comment;
 
 public interface ICommentService
 {
-    Task<ServiceResponse<List<CommentDto>>> GetAll();
+    Task<ServiceResponse<List<CommentDto>>> GetAll(CommentQuery commentQuery);
     Task<ServiceResponse<CommentDto>> GetById(int id);
     Task<ServiceResponse<string>> Delete(int id);
     Task<ServiceResponse<CommentDto>> CreateComment(string symbol, CreateCommentDto comment, ClaimsPrincipal user);

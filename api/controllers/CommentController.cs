@@ -2,6 +2,7 @@ using api.dtos.comment;
 using api.helpers;
 using api.models;
 using api.services.comment;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,10 +10,12 @@ namespace api.controllers;
 
 [Route("[controller]")]
 [ApiController]
+[Authorize]
 public class CommentController(ICommentService commentService) : ControllerBase
 {
     [HttpGet("all")]
-    public async Task<ActionResult<ServiceResponse<List<CommentDto>>>> GetAll()
+    
+    public async Task<ActionResult<ServiceResponse<List<CommentDto>>>> GetAll([FromQuery] CommentQuery commentQuery)
     {
         // validation: Data annotation(normally should be used when getting info via form,body etc
         if (!ModelState.IsValid)
@@ -20,7 +23,7 @@ public class CommentController(ICommentService commentService) : ControllerBase
             return BadRequest(ModelState);
         }
         
-        var response = await commentService.GetAll();
+        var response = await commentService.GetAll(commentQuery);
         return response.IsSuccess ? Ok(response) : NotFound(response);
     }
     

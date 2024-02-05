@@ -34,11 +34,13 @@ public class StockService: IStockService
                 queryableStocks = queryableStocks.Where(stock =>
                     stock.CompanyName.Contains(queryObject.CompanyName));
                 
-            } else if (!string.IsNullOrEmpty(queryObject.Symbol))
+            } 
+            if (!string.IsNullOrEmpty(queryObject.Symbol))
             {
                 queryableStocks = queryableStocks.Where(stock =>
-                    stock.CompanyName.Contains(queryObject.Symbol));
-            } else if (!string.IsNullOrEmpty(queryObject.SortBy))
+                    stock.Symbol.Contains(queryObject.Symbol));
+            } 
+            if (!string.IsNullOrEmpty(queryObject.SortBy))
             {
                 // OrdinalIgnoreCase: Compare strings using ordinal (binary) sort rules and ignoring the case of the strings being compared.
                 if (queryObject.SortBy.Equals("Symbol", StringComparison.OrdinalIgnoreCase))

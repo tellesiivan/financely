@@ -5,14 +5,14 @@ using Newtonsoft.Json;
 
 namespace api.services.FMS;
 
-public class FmpService(HttpClient _httpClient, IConfiguration _configuration): IFMPService
+public class FmpService(HttpClient httpClient, IConfiguration configuration): IFMPService
 {
     public async Task<models.Stock> FindStockBySymbolAsync(StockSymbolDto symbol)
     {
         try
         {
-            var key = _configuration["FmpKey"]!;
-            var fmpResponse = await _httpClient.GetAsync($"https://financialmodelingprep.com/api/v3/profile/{symbol.Symbol}?apikey={key}");
+            var key = configuration["FmpKey"]!;
+            var fmpResponse = await httpClient.GetAsync($"https://financialmodelingprep.com/api/v3/profile/{symbol.Symbol}?apikey={key}");
             if (!fmpResponse.IsSuccessStatusCode)
             {
                 throw new Exception("Error when trying to get information from FMP");
